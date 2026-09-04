@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>鲜直达 · 助农优选</title>
+  <link rel="stylesheet" href="vendor/vant.css">
+  <link rel="stylesheet" href="css/mp.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Login screen -->
+    <div v-if="!auth.token" class="login-page">
+      <div class="login-bg"></div>
+      <div class="login-card">
+        <div class="login-logo">鲜</div>
+        <h1>鲜直达</h1>
+        <p class="sub">助农优鲜 · 产地直发</p>
+        <van-cell-group inset>
+          <van-field v-model="loginForm.phone" label="账号" placeholder="139****5678" clearable></van-field>
+          <van-field v-model="loginForm.password" type="password" label="密码" placeholder="123456"></van-field>
+        </van-cell-group>
+        <van-button type="primary" block round :loading="loginLoading" @click="doLogin">登录</van-button>
+        <div class="login-hint">
+          <p>合伙人：<code>139****5678</code> / <code>123456</code></p>
+          <p>普通用户：<code>138****1234</code> / <code>123456</code></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- App shell (phone mockup) -->
+    <div v-else class="phone">
+      <div class="phone-statusbar">
+        <span>9:41</span>
+        <div class="right"><span>5G</span><span style="margin-left:4px;">100%</span></div>
+      </div>
+      <div class="phone-nav" :class="{ 'no-back': !showBack }">
+        <van-icon v-if="showBack" name="arrow-left" size="20" @click="goBack" ></van-icon>
+        <span class="title">{{ pageTitle }}</span>
+        <van-icon v-if="currentPage === 'home'" name="search" size="20" ></van-icon>
+        <span v-else></span>
+      </div>
+
+      <div class="phone-screen">
+        <!-- Home -->
+        <div v-show="currentPage === 'home'" class="page">
+          <div class="banner">
+            <div>
+              <div class="ttl">助农优鲜</div>
+              <div class="sub">产地直发 · 当日采摘 · 顺丰冷链</div>
+              <div class="ctad">新人立减 ¥18 ›</div>
+            </div>
+            <div class="deco">🍅</div>
+          </div>
+          <van-tabs v-model:active="category" sticky :swipeable="false" @change="onCategoryChange">
+            <van-tab v-for="c in categories" :title="c" :name="c" :key="c"></van-tab>
+          </van-tabs>
+          <div class="grid">
+            <div v-for="p in filteredProducts" :key="p.id" class="card" @click="goProduct(p.id)">
+              <div class="img" :style="`background:${p.gradient};`">
+                <span>{{ p.image }}</span>
+                <span v-if="p.tags[0]" class="badge">{{ p.tags[0] }}</span>
+                <span v-if="!p.active" class="soldout">已下架</span>
+              </div>
+              <div class="info">
+                <div class="ttl">{{ p.name }}</div>
+                <div class="price">
+                  <span class="now">¥{{ p.price }}</span>
+                  <span class="old">¥{{ p.originalPrice }}</span>
+                </div>
+                <div class="comm">推广赚 ¥{{ (p.price * p.commissionRate).toFixed(1) }}</div>
+                <div class="meta">已售 {{ p.sold }} · {{ p.spec.split('/')[0] }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Product detail -->
+        <div v-show="currentPage === 'product'" class="page">
+          <div v-if="currentProduct" class="product-detail">
+            <div class="hero" :style="`background:${currentProduct.gradient};`">
+              <span>{{ currentProduct.image }}</span>
+              <div class="indicator">1/3</div>
+            </div>
+            <div class="price-bar">
+              <div class="pb-top">
+                <span class="now">¥{{ currentProduct.price }}</span>
+                <span class="old">原价 ¥{{ currentProduct.originalPrice }}</span>
+              </div>
+              <div class="comm">💰 推广可赚 <b>¥{{ (currentProduct.price * currentProduct.commissionRate).toFixed(1) }}</b> · 佣金比例 {{ (currentProduct.commissionRate * 100).toFixed(0) }}%</div>
+            </div>
+            <van-cell-group inset>
+              <van-cell title="商品名" :value="currentProduct.name" ></van-cell>
+              <van-cell title="分类" :value="currentProduct.category" ></van-cell>
+              <van-cell title="规格" :value="currentProduct.spec" ></van-cell>
+              <van-cell title="库存" :value="currentProduct.stock + ' ' + currentProduct.spec.split('/')[0]" ></van-cell>
+            </van-cell-group>
+            <div class="section">
+              <h4>商品详情</h4>
+              <p>{{ currentProduct.description }}</p>
+            </div>
+            <div style="height:60px;"></div>
+          </div>
+        </div>
+
+        <!-- Checkout -->
+        <div v-show="currentPage === 'checkout'" class="page">
+          <div v-if="currentProduct" class="checkout">
+            <div class="addr-card">
+              <div class="ic">📍</div>
+              <div class="info">
+                <div class="name">{{ auth.user.name }} 138****1234</div>
+                <div class="line">上海市浦东新区世纪大道 100 号 1 号楼 1203 室</div>
+              </div>
+              <van-icon name="arrow" ></van-icon>
+            </div>
+            <div class="citem">
+              <div class="img" :style="`background:${currentProduct.gradient};`">{{ currentProduct.image }}</div>
+              <div class="info">
+                <div class="name">{{ currentProduct.name }}</div>
+                <div class="spec">{{ currentProduct.spec }}</div>
+                <div class="price-row">
+                  <span class="price">¥{{ currentProduct.price }}</span>
+                  <van-stepper v-model="qty" :min="1" :max="currentProduct.stock" integer ></van-stepper>
+                </div>
+              </div>
+            </div>
+            <van-cell-group inset title="费用明细">
+              <van-cell title="商品金额" :value="'¥' + (currentProduct.price * qty).toFixed(2)" ></van-cell>
+              <van-cell title="配送费" :value="'¥' + (qty * 4).toFixed(2)" ></van-cell>
+              <van-cell title="合计" :value="'¥' + (currentProduct.price * qty + qty * 4).toFixed(2)" ></van-cell>
+            </van-cell-group>
+            <div style="height:80px;"></div>
+          </div>
+        </div>
+
+        <!-- Payment -->
+        <div v-show="currentPage === 'payment'" class="page">
+          <div v-if="currentProduct" class="payment">
+            <div class="pay-box">
+              <div style="font-size:60px;margin-bottom:14px;">💸</div>
+              <div style="font-size:14px;color:#8590a3;">订单金额</div>
+              <div class="pay-amount">¥{{ (currentProduct.price * qty + qty * 4).toFixed(2) }}</div>
+              <div class="pay-method">
+                <span style="font-size:18px;vertical-align:middle;">💚</span> 微信支付
+              </div>
+              <div class="pay-tip">支付即视为同意《用户协议》《隐私政策》</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Orders -->
+        <div v-show="currentPage === 'orders'" class="page">
+          <van-tabs v-model:active="orderTab" sticky>
+            <van-tab title="全部" name="all"></van-tab>
+            <van-tab title="待付款" name="pending_pay"></van-tab>
+            <van-tab title="待发货" name="paid"></van-tab>
+            <van-tab title="已发货" name="shipped"></van-tab>
+          </van-tabs>
+          <div class="orders">
+            <div v-for="o in filteredOrders" :key="o.id" class="order">
+              <div class="hd">
+                <span class="id">订单号：{{ o.id }}</span>
+                <span class="st" :style="`color:${o.statusColor};`">{{ o.statusLabel }}</span>
+              </div>
+              <div class="citem" @click="goLogistics(o)">
+                <div class="img" :style="`background:${(products.find(p => p.id === o.productId) || {}).gradient || '#eee'};`">{{ o.productImage }}</div>
+                <div class="info">
+                  <div class="name">{{ o.productName }}</div>
+                  <div class="spec">{{ o.spec }} × {{ o.qty }}</div>
+                  <div class="price-row">
+                    <span class="price">¥{{ o.total.toFixed(2) }}</span>
+                    <span v-if="o.source === 'partner'" class="comm">⭐ 推广订单</span>
+                  </div>
+                </div>
+              </div>
+              <div class="ft">
+                <van-button v-if="o.status === 'pending_pay'" size="small" type="primary" round @click="payOrder(o)">立即支付</van-button>
+                <van-button v-if="o.status === 'paid'" size="small" plain round @click="cancelOrder(o)">取消订单</van-button>
+                <van-button v-if="o.status === 'shipped'" size="small" type="primary" round @click="confirmOrder(o)">确认收货</van-button>
+                <van-button v-if="o.status === 'shipped' || o.status === 'delivered'" size="small" plain round @click="goLogistics(o)">查看物流</van-button>
+              </div>
+            </div>
+            <van-empty v-if="filteredOrders.length === 0" description="暂无相关订单" ></van-empty>
+          </div>
+        </div>
+
+        <!-- Logistics -->
+        <div v-show="currentPage === 'logistics'" class="page">
+          <div v-if="currentOrder" class="logistics">
+            <div class="status-bar">
+              <div style="font-size:12px;opacity:0.9;">订单状态</div>
+              <div class="status-text">{{ currentOrder.statusLabel }}</div>
+            </div>
+            <div class="track">
+              <div class="head">
+                <div>
+                  <div class="company">{{ currentOrder.trackingCompany || '待分配' }}</div>
+                  <div class="no">{{ currentOrder.trackingNo || '尚未生成运单' }}</div>
+                </div>
+              </div>
+              <div class="steps">
+                <div class="step done">
+                  <div>订单提交成功</div>
+                  <div class="time">{{ formatTime(currentOrder.createdAt) }}</div>
+                </div>
+                <div class="step done">
+                  <div>支付成功</div>
+                  <div class="time">{{ formatTime(currentOrder.createdAt) }}</div>
+                </div>
+                <div class="step" :class="{ done: currentOrder.status === 'shipped' || currentOrder.status === 'delivered', active: currentOrder.status === 'shipped' }">
+                  <div>商品已发货</div>
+                  <div class="time" v-if="currentOrder.trackingNo">运单 {{ currentOrder.trackingNo }}</div>
+                </div>
+                <div class="step" :class="{ done: currentOrder.status === 'delivered', active: currentOrder.status === 'shipped' }">
+                  <div>运输中（到达目的地城市）</div>
+                </div>
+                <div class="step" :class="{ done: currentOrder.status === 'delivered' }">
+                  <div>派送中</div>
+                </div>
+                <div class="step" :class="{ done: currentOrder.status === 'delivered' }">
+                  <div>已签收</div>
+                </div>
+              </div>
+            </div>
+            <van-cell-group inset title="订单信息">
+              <van-cell title="订单号" :value="currentOrder.id" ></van-cell>
+              <van-cell title="下单时间" :value="formatTime(currentOrder.createdAt)" ></van-cell>
+              <van-cell title="收货地址" :value="currentOrder.address" ></van-cell>
+            </van-cell-group>
+          </div>
+        </div>
+
+        <!-- Profile -->
+        <div v-show="currentPage === 'profile'" class="page">
+          <div class="profile">
+            <div class="user">
+              <div class="av">{{ auth.user.avatar || '👤' }}</div>
+              <div>
+                <div class="name">{{ auth.user.name }}</div>
+                <div class="role">
+                  <van-tag v-if="auth.user.is_partner" type="warning" size="medium">⭐ 社区合伙人</van-tag>
+                  <van-tag v-else type="primary" size="medium">普通用户</van-tag>
+                  <span style="margin-left:6px;">{{ auth.user.id }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="stats">
+              <div class="item"><div class="v">{{ orderStats.pending }}</div><div class="l">待付款</div></div>
+              <div class="item"><div class="v">{{ orderStats.shipping }}</div><div class="l">进行中</div></div>
+              <div class="item"><div class="v">{{ orderStats.done }}</div><div class="l">已收货</div></div>
+            </div>
+          </div>
+          <van-cell-group inset style="margin: 12px;">
+            <van-cell title="我的订单" icon="orders-o" is-link @click="go('orders')" ></van-cell>
+            <van-cell title="合伙人中心" icon="star-o" is-link @click="go('partner')" v-if="auth.user.is_partner" ></van-cell>
+            <van-cell title="联系客服" icon="service-o" is-link ></van-cell>
+            <van-cell title="常见问题" icon="question-o" is-link ></van-cell>
+            <van-cell title="用户协议" icon="description" is-link ></van-cell>
+            <van-cell title="设置" icon="setting-o" is-link @click="onSwitchUser" ></van-cell>
+          </van-cell-group>
+        </div>
+
+        <!-- Partner -->
+        <div v-show="currentPage === 'partner'" class="page" v-if="partnerInfo">
+          <div class="partner-hero">
+            <div class="lbl">累计佣金收益（元）</div>
+            <div class="big">¥{{ partnerInfo.total.toFixed(2) }}</div>
+            <div class="sub">邀请好友享专属佣金，订单完成后可提现</div>
+            <div class="row">
+              <div class="item"><div class="v">¥{{ partnerInfo.settled.toFixed(2) }}</div><div class="l">已结算</div></div>
+              <div class="item"><div class="v">¥{{ partnerInfo.pending.toFixed(2) }}</div><div class="l">待结算</div></div>
+              <div class="item"><div class="v">{{ partnerInfo.orderCount }}</div><div class="l">推广订单</div></div>
+            </div>
+          </div>
+          <van-cell-group inset style="margin:12px;">
+            <van-cell title="去选品分享" icon="gift-o" is-link @click="go('home')" ></van-cell>
+            <van-cell title="提现记录" icon="balance-o" is-link ></van-cell>
+            <van-cell title="推广教程" icon="bulb-o" is-link ></van-cell>
+          </van-cell-group>
+          <div style="padding:0 16px;color:#1a1a1e;font-weight:600;margin-top:8px;">佣金明细</div>
+          <div style="margin:8px 12px;background:#fff;border-radius:8px;">
+            <div v-for="c in partnerInfo.commissions" :key="c.id" class="comm-row">
+              <div>
+                <div class="comm-name">{{ c.productName }}</div>
+                <div class="comm-meta">{{ formatTime(c.createdAt) }} · 比例 {{ (c.rate * 100).toFixed(0) }}%</div>
+              </div>
+              <div style="text-align:right;">
+                <div class="comm-v">+¥{{ c.amount.toFixed(2) }}</div>
+                <van-tag :type="c.status === 'settled' ? 'success' : 'warning'" size="small">{{ c.status === 'settled' ? '已结算' : '待结算' }}</van-tag>
+              </div>
+            </div>
+            <van-empty v-if="!partnerInfo.commissions.length" description="暂无佣金记录" ></van-empty>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action bar (product detail) -->
+      <div v-if="currentPage === 'product' && currentProduct" class="action-bar">
+        <div class="act"><van-icon name="service-o" size="20" ></van-icon><div>客服</div></div>
+        <div class="act" @click="showShare = true"><van-icon name="star-o" size="20" color="#e6a23c" ></van-icon><div>分享赚</div></div>
+        <div class="btn cart" @click="addToCart">加入购物车</div>
+        <div class="btn" :class="{ disabled: !currentProduct.active || currentProduct.stock === 0 }" @click="goCheckout">
+          {{ !currentProduct.active || currentProduct.stock === 0 ? '已售罄' : '立即购买' }}
+        </div>
+      </div>
+
+      <!-- Pay bar (checkout/payment) -->
+      <div v-if="currentPage === 'checkout' || currentPage === 'payment'" class="pay-bar">
+        <div class="total">合计 <span class="v">¥{{ currentProduct ? (currentProduct.price * qty + qty * 4).toFixed(2) : '0' }}</span></div>
+        <van-button v-if="currentPage === 'checkout'" type="primary" round @click="goPayment">微信支付</van-button>
+        <van-button v-else type="success" round :loading="paying" @click="confirmPay">确认支付</van-button>
+      </div>
+
+      <!-- Tabbar -->
+      <van-tabbar v-if="!showBack || ['home','orders','partner','profile'].includes(currentPage)" v-model="tabbarActive" @change="onTabbarChange" active-color="#2bb673">
+        <van-tabbar-item icon="home-o" name="home">首页</van-tabbar-item>
+        <van-tabbar-item icon="orders-o" name="orders">订单</van-tabbar-item>
+        <van-tabbar-item v-if="auth.user.is_partner" icon="star-o" name="partner">合伙人</van-tabbar-item>
+        <van-tabbar-item icon="user-o" name="profile">我的</van-tabbar-item>
+      </van-tabbar>
+
+      <!-- Share dialog -->
+      <van-share-sheet v-model:show="showShare" title="分享给好友" :options="shareOptions" @select="onShareSelect"></van-share-sheet>
+    </div>
+  </div>
+
+  <script src="vendor/vue.global.prod.js"></script>
+  <script src="vendor/vant.min.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
