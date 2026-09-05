@@ -10,6 +10,11 @@ const app = createApp({
 
     const loginForm = ref({ phone: '139****5678', password: '123456' });
     const loginLoading = ref(false);
+    const authMode = ref('login'); // 'login' | 'register'
+    const regForm = ref({ phone: '', name: '', avatar: '👤', password: '', password2: '' });
+    const registerLoading = ref(false);
+    const editProfile = ref({ show: false, loading: false, form: { name: '', avatar: '' } });
+    const changePwd = ref({ show: false, loading: false, form: { oldPassword: '', newPassword: '', newPassword2: '' } });
 
     const currentPage = ref('home');
     const tabbarActive = ref('home');
@@ -68,6 +73,10 @@ const app = createApp({
     }[currentPage.value] || '鲜直达'));
 
     // -- Actions -------------------------------------------------------
+    function switchAuthMode(mode) {
+      authMode.value = mode;
+      if (mode === 'register' && !regForm.value.avatar) regForm.value.avatar = '👤';
+    }
     async function doLogin() {
       loginLoading.value = true;
       try {
@@ -80,6 +89,70 @@ const app = createApp({
         vant.showFailToast(e.message);
       } finally {
         loginLoading.value = false;
+      }
+    }
+    async function doRegister() {
+      const f = regForm.value;
+      if (!f.phone || !f.name || !f.password) { vant.showFailToast('请填写完整信息'); return; }
+      if (f.password.length < 6) { vant.showFailToast('密码至少 6 位'); return; }
+      if (f.password !== f.password2) { vant.showFailToast('两次密码不一致'); return; }
+      registerLoading.value = true;
+      try {
+        const r = await API.register({ phone: f.phone, password: f.password, name: f.name, avatar: f.avatar || '👤' });
+        API.setToken(r.token);
+        auth.value = { token: r.token, user: r.user };
+        vant.showSuccessToast('注册成功');
+        regForm.value = { phone: '', name: '', avatar: '👤', password: '', password2: '' };
+        authMode.value = 'login';
+        await loadAll();
+      } catch (e) {
+        vant.showFailToast(e.message);
+      } finally {
+        registerLoading.value = false;
+      }
+    }
+    function openEditProfile() {
+      if (!auth.value.user) return;
+      editProfile.value = {
+        show: true,
+        loading: false,
+        form: { name: auth.value.user.name || '', avatar: auth.value.user.avatar || '👤' },
+      };
+    }
+    async function saveProfile() {
+      const f = editProfile.value.form;
+      if (!f.name || !f.name.trim()) { vant.showFailToast('昵称不能为空'); return; }
+      if (f.name.length > 20) { vant.showFailToast('昵称不能超过 20 字'); return; }
+      editProfile.value.loading = true;
+      try {
+        const r = await API.updateMe({ name: f.name.trim(), avatar: f.avatar || '👤' });
+        auth.value = { ...auth.value, user: r.user };
+        vant.showSuccessToast('已保存');
+        editProfile.value.show = false;
+      } catch (e) {
+        vant.showFailToast(e.message);
+      } finally {
+        editProfile.value.loading = false;
+      }
+    }
+    function openChangePwd() {
+      changePwd.value = { show: true, loading: false, form: { oldPassword: '', newPassword: '', newPassword2: '' } };
+    }
+    async function saveNewPassword() {
+      const f = changePwd.value.form;
+      if (!f.oldPassword || !f.newPassword) { vant.showFailToast('请填写原密码和新密码'); return; }
+      if (f.newPassword.length < 6) { vant.showFailToast('新密码至少 6 位'); return; }
+      if (f.newPassword !== f.newPassword2) { vant.showFailToast('两次新密码不一致'); return; }
+      changePwd.value.loading = true;
+      try {
+        await API.changePassword(f.oldPassword, f.newPassword);
+        vant.showSuccessToast('密码已修改，请重新登录');
+        changePwd.value.show = false;
+        setTimeout(() => logout(), 800);
+      } catch (e) {
+        vant.showFailToast(e.message);
+      } finally {
+        changePwd.value.loading = false;
       }
     }
 
@@ -245,7 +318,8 @@ const app = createApp({
     });
 
     const exported = {
-      auth, loginForm, loginLoading, doLogin, logout, onSwitchUser,
+      auth, loginForm, loginLoading, doLogin, logout, authMode, regForm, registerLoading, switchAuthMode, doRegister,
+      editProfile, changePwd, openEditProfile, saveProfile, openChangePwd, saveNewPassword, onSwitchUser,
       currentPage, tabbarActive, showBack, pageTitle,
       go, goBack, goProduct, goCheckout, goPayment, goLogistics, onTabbarChange,
       categories, category, products, filteredProducts, onCategoryChange,

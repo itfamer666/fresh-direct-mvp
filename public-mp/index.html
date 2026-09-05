@@ -9,21 +9,41 @@
 </head>
 <body>
   <div id="app">
-    <!-- Login screen -->
+    <!-- Login / Register screen -->
     <div v-if="!auth.token" class="login-page">
       <div class="login-bg"></div>
       <div class="login-card">
         <div class="login-logo">鲜</div>
         <h1>鲜直达</h1>
         <p class="sub">助农优鲜 · 产地直发</p>
-        <van-cell-group inset>
-          <van-field v-model="loginForm.phone" label="账号" placeholder="139****5678" clearable></van-field>
-          <van-field v-model="loginForm.password" type="password" label="密码" placeholder="123456"></van-field>
-        </van-cell-group>
-        <van-button type="primary" block round :loading="loginLoading" @click="doLogin">登录</van-button>
+        <!-- 登录表单 -->
+        <div v-show="authMode === 'login'">
+          <van-cell-group inset>
+            <van-field v-model="loginForm.phone" label="账号" placeholder="138****1234 或 11 位手机号" clearable></van-field>
+            <van-field v-model="loginForm.password" type="password" label="密码" placeholder="123456"></van-field>
+          </van-cell-group>
+          <van-button type="primary" block round :loading="loginLoading" @click="doLogin">登录</van-button>
+          <div style="text-align:center;margin-top:14px;font-size:13px;color:#65676f;">
+            没有账号？<a style="color:#2c5f4c;font-weight:600;cursor:pointer;" @click="switchAuthMode('register')">立即注册</a>
+          </div>
+        </div>
+        <!-- 注册表单 -->
+        <div v-show="authMode === 'register'">
+          <van-cell-group inset>
+            <van-field v-model="regForm.phone" label="手机号" placeholder="11 位手机号" clearable maxlength="11"></van-field>
+            <van-field v-model="regForm.name" label="昵称" placeholder="2-20 字" maxlength="20"></van-field>
+            <van-field v-model="regForm.avatar" label="头像" placeholder="选填：emoji 一个，如 👨"></van-field>
+            <van-field v-model="regForm.password" type="password" label="密码" placeholder="至少 6 位"></van-field>
+            <van-field v-model="regForm.password2" type="password" label="确认" placeholder="再输一次密码"></van-field>
+          </van-cell-group>
+          <van-button type="primary" block round :loading="registerLoading" @click="doRegister">注册并登录</van-button>
+          <div style="text-align:center;margin-top:14px;font-size:13px;color:#65676f;">
+            已有账号？<a style="color:#2c5f4c;font-weight:600;cursor:pointer;" @click="switchAuthMode('login')">返回登录</a>
+          </div>
+        </div>
         <div class="login-hint">
-          <p>合伙人：<code>139****5678</code> / <code>123456</code></p>
-          <p>普通用户：<code>138****1234</code> / <code>123456</code></p>
+          <p>演示账号：合伙人 <code>139****5678</code> / <code>123456</code></p>
+          <p>普通用户 <code>138****1234</code> / <code>123456</code></p>
         </div>
       </div>
     </div>
@@ -238,14 +258,14 @@
         <!-- Profile -->
         <div v-show="currentPage === 'profile'" class="page">
           <div class="profile">
-            <div class="user">
+            <div class="user" @click="openEditProfile" style="cursor:pointer;">
               <div class="av">{{ auth.user.avatar || '👤' }}</div>
-              <div>
-                <div class="name">{{ auth.user.name }}</div>
+              <div style="flex:1;">
+                <div class="name">{{ auth.user.name }} <van-icon name="edit" size="14" color="#8590a3" style="margin-left:4px;"></van-icon></div>
                 <div class="role">
                   <van-tag v-if="auth.user.is_partner" type="warning" size="medium">⭐ 社区合伙人</van-tag>
                   <van-tag v-else type="primary" size="medium">普通用户</van-tag>
-                  <span style="margin-left:6px;">{{ auth.user.id }}</span>
+                  <span style="margin-left:6px;">{{ auth.user.id }} · {{ auth.user.phone }}</span>
                 </div>
               </div>
             </div>
@@ -257,11 +277,14 @@
           </div>
           <van-cell-group inset style="margin: 12px;">
             <van-cell title="我的订单" icon="orders-o" is-link @click="go('orders')" ></van-cell>
+            <van-cell title="编辑资料" icon="edit" is-link @click="openEditProfile" ></van-cell>
+            <van-cell title="修改密码" icon="lock" is-link @click="openChangePwd" ></van-cell>
             <van-cell title="合伙人中心" icon="star-o" is-link @click="go('partner')" v-if="auth.user.is_partner" ></van-cell>
             <van-cell title="联系客服" icon="service-o" is-link ></van-cell>
             <van-cell title="常见问题" icon="question-o" is-link ></van-cell>
             <van-cell title="用户协议" icon="description" is-link ></van-cell>
-            <van-cell title="设置" icon="setting-o" is-link @click="onSwitchUser" ></van-cell>
+            <van-cell title="切换演示身份" icon="setting-o" is-link @click="onSwitchUser" ></van-cell>
+            <van-cell title="退出登录" icon="cross" is-link @click="logout" style="color:#e57832;" ></van-cell>
           </van-cell-group>
         </div>
 
@@ -326,6 +349,40 @@
 
       <!-- Share dialog -->
       <van-share-sheet v-model:show="showShare" title="分享给好友" :options="shareOptions" @select="onShareSelect"></van-share-sheet>
+
+      <!-- Edit profile dialog -->
+      <van-popup v-model:show="editProfile.show" position="bottom" round :style="{ height: '60%' }">
+        <div style="padding:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div style="font-size:16px;font-weight:600;">编辑资料</div>
+            <van-icon name="cross" size="20" @click="editProfile.show = false" />
+          </div>
+          <van-cell-group inset>
+            <van-field v-model="editProfile.form.avatar" label="头像" placeholder="emoji 头像，如 👨" maxlength="4"></van-field>
+            <van-field v-model="editProfile.form.name" label="昵称" placeholder="2-20 字" maxlength="20"></van-field>
+          </van-cell-group>
+          <div style="color:#8590a3;font-size:12px;margin:8px 4px;">
+            用户 ID：{{ auth.user.id }}　手机号：{{ auth.user.phone }}（不可修改）
+          </div>
+          <van-button type="primary" block round :loading="editProfile.loading" @click="saveProfile">保存</van-button>
+        </div>
+      </van-popup>
+
+      <!-- Change password dialog -->
+      <van-popup v-model:show="changePwd.show" position="bottom" round :style="{ height: '50%' }">
+        <div style="padding:16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+            <div style="font-size:16px;font-weight:600;">修改密码</div>
+            <van-icon name="cross" size="20" @click="changePwd.show = false" />
+          </div>
+          <van-cell-group inset>
+            <van-field v-model="changePwd.form.oldPassword" type="password" label="原密码" placeholder="请输入当前密码"></van-field>
+            <van-field v-model="changePwd.form.newPassword" type="password" label="新密码" placeholder="至少 6 位"></van-field>
+            <van-field v-model="changePwd.form.newPassword2" type="password" label="确认" placeholder="再输一次新密码"></van-field>
+          </van-cell-group>
+          <van-button type="primary" block round :loading="changePwd.loading" style="margin-top:8px;" @click="saveNewPassword">提交</van-button>
+        </div>
+      </van-popup>
     </div>
   </div>
 

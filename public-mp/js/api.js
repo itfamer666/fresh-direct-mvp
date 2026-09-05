@@ -27,7 +27,10 @@ const API = (function() {
   return {
     getToken, setToken, clearToken,
     login: (phone, password) => request('/auth/login', { method: 'POST', body: JSON.stringify({ phone, password }) }),
+    register: (data) => request('/auth/register', { method: 'POST', body: JSON.stringify(data) }),
     me: () => request('/auth/me'),
+    updateMe: (data) => request('/auth/me', { method: 'PATCH', body: JSON.stringify(data) }),
+    changePassword: (oldPassword, newPassword) => request('/auth/change-password', { method: 'POST', body: JSON.stringify({ oldPassword, newPassword }) }),
     listProducts: (params = {}) => {
       const q = new URLSearchParams(params).toString();
       return request('/products' + (q ? '?' + q : ''));
