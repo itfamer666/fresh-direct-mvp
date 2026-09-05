@@ -41,6 +41,7 @@ const API = (function() {
     payOrder: (id) => request(`/orders/${id}/pay`, { method: 'POST' }),
     confirmOrder: (id) => request(`/orders/${id}/confirm`, { method: 'POST' }),
     cancelOrder: (id) => request(`/orders/${id}/cancel`, { method: 'POST' }),
+    removeOrder: (id) => request(`/orders/${id}`, { method: 'DELETE' }),
     myCommissions: (params = {}) => {
       const q = new URLSearchParams(params).toString();
       return request('/commissions' + (q ? '?' + q : ''));

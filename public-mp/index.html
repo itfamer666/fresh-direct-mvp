@@ -151,11 +151,13 @@
 
         <!-- Orders -->
         <div v-show="currentPage === 'orders'" class="page">
-          <van-tabs v-model:active="orderTab" sticky>
+          <van-tabs v-model:active="orderTab" sticky @change="onOrderTabChange">
             <van-tab title="全部" name="all"></van-tab>
             <van-tab title="待付款" name="pending_pay"></van-tab>
             <van-tab title="待发货" name="paid"></van-tab>
             <van-tab title="已发货" name="shipped"></van-tab>
+            <van-tab title="已完成" name="delivered"></van-tab>
+            <van-tab title="已取消" name="cancelled"></van-tab>
           </van-tabs>
           <div class="orders">
             <div v-for="o in filteredOrders" :key="o.id" class="order">
@@ -179,6 +181,8 @@
                 <van-button v-if="o.status === 'paid'" size="small" plain round @click="cancelOrder(o)">取消订单</van-button>
                 <van-button v-if="o.status === 'shipped'" size="small" type="primary" round @click="confirmOrder(o)">确认收货</van-button>
                 <van-button v-if="o.status === 'shipped' || o.status === 'delivered'" size="small" plain round @click="goLogistics(o)">查看物流</van-button>
+                <van-button v-if="o.status === 'pending_pay'" size="small" plain round @click="cancelOrder(o)">取消</van-button>
+                <van-button v-if="o.status === 'delivered' || o.status === 'cancelled'" size="small" plain round @click="removeOrder(o)">删除订单</van-button>
               </div>
             </div>
             <van-empty v-if="filteredOrders.length === 0" description="暂无相关订单" ></van-empty>

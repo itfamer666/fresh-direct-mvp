@@ -44,14 +44,18 @@ const app = createApp({
       return products.value.filter(p => p.category === category.value);
     });
     const filteredOrders = computed(() => {
-      if (orderTab.value === 'all') return orders.value;
-      return orders.value.filter(o => o.status === orderTab.value);
+      const list = orderTab.value === 'all' ? orders.value : orders.value.filter(o => o.status === orderTab.value);
+      // 列表按时间倒序：最新订单在前
+      return [...list].sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
     });
     const orderStats = computed(() => ({
       pending: orders.value.filter(o => o.status === 'pending_pay').length,
       shipping: orders.value.filter(o => ['paid', 'shipped'].includes(o.status)).length,
       done: orders.value.filter(o => o.status === 'delivered').length,
     }));
+    function onOrderTabChange(name) {
+      orderTab.value = name;
+    }
     const pageTitle = computed(() => ({
       home: '鲜直达 · 助农优选',
       product: '商品详情',
@@ -178,6 +182,14 @@ const app = createApp({
         await loadAll();
       } catch (e) { /* cancelled */ }
     }
+    async function removeOrder(o) {
+      try {
+        await vant.showConfirmDialog({ title: '删除订单', message: `确认删除订单 ${o.id}？删除后不可恢复。` });
+        await API.removeOrder(o.id);
+        vant.showSuccessToast('已删除');
+        await loadAll();
+      } catch (e) { /* cancelled */ }
+    }
     async function confirmOrder(o) {
       try {
         await vant.showConfirmDialog({ title: '确认收货', message: '确认已收到商品？确认后佣金将自动结算。' });
@@ -239,7 +251,8 @@ const app = createApp({
       categories, category, products, filteredProducts, onCategoryChange,
       currentProduct, currentOrder, qty, showShare, shareOptions, onShareSelect,
       orders, filteredOrders, orderTab, orderStats, partnerInfo,
-      paying, confirmPay, payOrder, cancelOrder, confirmOrder, addToCart,
+      paying, confirmPay, payOrder, cancelOrder, removeOrder, confirmOrder, addToCart,
+      onOrderTabChange,
       loadProducts, loadOrders, loadPartner,
       formatTime,
     };

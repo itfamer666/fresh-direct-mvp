@@ -141,6 +141,18 @@ router.post('/:id/cancel', authRequired, (req, res) => {
   res.json({ order: rowToDto(db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id)) });
 });
 
+// DELETE /api/orders/:id — 用户删除已结束订单（仅 delivered/cancelled，且仅本人）
+router.delete('/:id', authRequired, (req, res) => {
+  const o = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
+  if (!o) return res.status(404).json({ error: 'not_found' });
+  if (o.user_id !== req.user.id && !req.user.is_admin) return res.status(403).json({ error: 'forbidden' });
+  if (!['delivered', 'cancelled'].includes(o.status)) {
+    return res.status(400).json({ error: 'invalid_state', message: '仅已完成或已取消的订单可删除' });
+  }
+  db.prepare('DELETE FROM orders WHERE id = ?').run(req.params.id);
+  res.json({ ok: true, id: req.params.id });
+});
+
 const ORDER_STATUS_LABEL = {
   pending_pay: '待付款',
   paid: '待发货',
