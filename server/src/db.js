@@ -91,6 +91,14 @@ CREATE TABLE IF NOT EXISTS logs (
 );
 `);
 
+// ── 轻量迁移：老库升级（不重建数据）─────────────────────────────────
+try {
+  db.prepare('SELECT image_url FROM products LIMIT 1').get();
+} catch (e) {
+  db.exec('ALTER TABLE products ADD COLUMN image_url TEXT');
+  console.log('[DB] Migrated: products + image_url');
+}
+
 // ── Seed on first run ───────────────────────────────────────────────
 const userCount = db.prepare('SELECT COUNT(*) as n FROM users').get().n;
 if (userCount === 0) {

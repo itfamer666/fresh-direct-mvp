@@ -35,14 +35,14 @@ router.get('/:id', (req, res) => {
 
 // POST /api/products — create (admin)
 router.post('/', adminRequired, (req, res) => {
-  const { name, subtitle, category, spec, price, original_price, stock, image, gradient, tags, description, commission_rate, active } = req.body || {};
+  const { name, subtitle, category, spec, price, original_price, stock, image, gradient, tags, description, commission_rate, active, image_url } = req.body || {};
   if (!name || !price) return res.status(400).json({ error: 'missing_fields' });
   const id = 'P' + String(Date.now()).slice(-6);
   const now = new Date().toISOString();
   db.prepare(`
-    INSERT INTO products (id, name, subtitle, category, spec, price, original_price, stock, sold, image, gradient, tags, description, commission_rate, active, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?)
-  `).run(id, name, subtitle, category, spec, price, original_price, stock || 0, image || '📦', gradient || 'linear-gradient(135deg, #ddd 0%, #bbb 100%)', (tags || []).join(','), description, commission_rate || 0.15, active === false ? 0 : 1, now);
+    INSERT INTO products (id, name, subtitle, category, spec, price, original_price, stock, sold, image, gradient, tags, description, commission_rate, active, image_url, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(id, name, subtitle, category, spec, price, original_price, stock || 0, image || '📦', gradient || 'linear-gradient(135deg, #ddd 0%, #bbb 100%)', (tags || []).join(','), description, commission_rate || 0.15, active === false ? 0 : 1, image_url || null, now);
   const p = db.prepare('SELECT * FROM products WHERE id = ?').get(id);
   res.json({ product: rowToDto(p) });
 });
@@ -51,7 +51,7 @@ router.post('/', adminRequired, (req, res) => {
 router.patch('/:id', adminRequired, (req, res) => {
   const p = db.prepare('SELECT * FROM products WHERE id = ?').get(req.params.id);
   if (!p) return res.status(404).json({ error: 'not_found' });
-  const fields = ['name', 'subtitle', 'category', 'spec', 'price', 'original_price', 'stock', 'image', 'gradient', 'description', 'commission_rate', 'active'];
+  const fields = ['name', 'subtitle', 'category', 'spec', 'price', 'original_price', 'stock', 'image', 'gradient', 'description', 'commission_rate', 'active', 'image_url'];
   const updates = [];
   const args = [];
   for (const f of fields) {
@@ -105,6 +105,7 @@ function rowToDto(p) {
     stock: p.stock,
     sold: p.sold,
     image: p.image,
+    imageUrl: p.image_url || null,
     gradient: p.gradient,
     tags: p.tags ? p.tags.split(',') : [],
     description: p.description,

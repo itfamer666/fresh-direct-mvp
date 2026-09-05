@@ -131,7 +131,9 @@ body { margin: 0; font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', 
   border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
   font-size: 32px; flex-shrink: 0;
+  overflow: hidden;
 }
+.prod-img img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
 .prod-info { flex: 1; min-width: 0; }
 .prod-name { font-size: 13px; font-weight: 600; color: #1a2820; line-height: 1.3; }
 .prod-cat { font-size: 11px; color: #8590a3; margin-top: 2px; }

@@ -112,7 +112,9 @@ body { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   height: 120px; position: relative;
   display: flex; align-items: center; justify-content: center;
   font-size: 50px;
+  overflow: hidden;
 }
+.card .img img { width: 100%; height: 100%; object-fit: cover; }
 .card .img .badge {
   position: absolute; top: 6px; left: 6px;
   padding: 1px 6px; background: var(--mp-accent);
@@ -142,7 +144,9 @@ body { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   width: 100%; height: 280px;
   display: flex; align-items: center; justify-content: center;
   font-size: 110px; position: relative;
+  overflow: hidden;
 }
+.product-detail .hero img { width: 100%; height: 100%; object-fit: cover; }
 .product-detail .hero .indicator {
   position: absolute; bottom: 12px; left: 50%;
   transform: translateX(-50%);
@@ -200,7 +204,9 @@ body { font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   width: 70px; height: 70px; border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
   font-size: 30px; flex-shrink: 0;
+  overflow: hidden;
 }
+.citem .img img { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
 .citem .info { flex: 1; }
 .citem .name { font-size: 13px; line-height: 1.4; }
 .citem .spec { font-size: 11px; color: var(--mp-muted); margin-top: 2px; }

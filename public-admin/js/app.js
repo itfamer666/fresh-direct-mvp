@@ -252,6 +252,7 @@ const app = createApp({
           price: '', original_price: '', stock: '', image: '📦',
           gradient: 'linear-gradient(135deg, #ffb3b3 0%, #ff7a8a 100%)',
           tags: [], description: '', commission_rate: 0.2, active: true,
+          image_url: '',
         },
       };
     }
@@ -267,8 +268,24 @@ const app = createApp({
           image: p.image, gradient: p.gradient,
           tags: p.tags || [], description: p.description || '',
           commission_rate: p.commissionRate, active: p.active,
+          image_url: p.imageUrl || '',
         },
       };
+    }
+    // 自定义上传：el-upload 的 :http-request 会把 option 传进来（含 file）
+    async function uploadProductImage(option) {
+      const fd = new FormData();
+      fd.append('file', option.file);
+      try {
+        const data = await API.uploadFile(fd);
+        productDialog.value.form.image_url = data.url;
+        ElMessage.success('图片上传成功');
+      } catch (e) {
+        ElMessage.error(e.message || '图片上传失败');
+      }
+    }
+    function removeProductImage() {
+      productDialog.value.form.image_url = '';
     }
     async function saveProduct() {
       const f = productDialog.value.form;
@@ -282,6 +299,7 @@ const app = createApp({
           tags: Array.isArray(f.tags) ? f.tags : String(f.tags || '').split(/[,，]/).filter(Boolean),
           description: f.description, commission_rate: Number(f.commission_rate) || 0.15,
           active: f.active,
+          image_url: f.image_url || null,
         };
         if (productDialog.value.mode === 'create') {
           await API.createProduct(payload);
@@ -477,6 +495,7 @@ const app = createApp({
       detailDrawer,
       userDetail, userDetailOrders, userDetailReferrer, openUserDetail, userOrderStats, exportUsers,
       productDialog, productCategories, openProductCreate, openProductEdit, saveProduct,
+      uploadProductImage, removeProductImage,
       userDialog, openUserCreate, openUserEdit, saveUser,
       adjustStock, toggleProduct, shipOrder, confirmOrder, openOrderDetail,
       togglePartner, settleCommission,

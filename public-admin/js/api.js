@@ -59,6 +59,16 @@ const API = (function() {
     adjustStock: (id, delta) => request(`/products/${id}/stock`, { method: 'POST', body: JSON.stringify({ delta }) }),
     createProduct: (data) => request('/products', { method: 'POST', body: JSON.stringify(data) }),
     updateProduct: (id, data) => request(`/products/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    // 上传商品图片（multipart，不能手动设 Content-Type，让浏览器带 boundary）
+    uploadFile: (formData) => fetch(BASE + '/upload', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + getToken() },
+      body: formData,
+    }).then(async res => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || data.error || '上传失败');
+      return data;
+    }),
     // Orders
     listOrders: (params = {}) => {
       const q = new URLSearchParams(params).toString();

@@ -27,3 +27,6 @@ Thumbs.db
 # Env
 .env
 .env.local
+
+# Uploaded files (runtime generated)
+server/uploads/

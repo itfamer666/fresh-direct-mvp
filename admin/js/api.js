@@ -22,13 +22,26 @@ const API = (function() {
     );
     const token = getToken();
     if (token) headers['Authorization'] = 'Bearer ' + token;
-    const res = await fetch(BASE + path, Object.assign({ headers }, options));
+    let res;
+    try {
+      res = await fetch(BASE + path, Object.assign({ headers }, options));
+    } catch (e) {
+      // 网络层失败：代理不通 / 服务未启动 / 请求被拦截
+      throw new Error('网络连接失败：无法访问服务（' + BASE + path + '），请确认通过预览面板访问且服务已启动');
+    }
     if (res.status === 401) {
       clearToken();
       throw new Error('登录已过期');
     }
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.message || data.error || '请求失败');
+    let data = {};
+    try { data = await res.json(); } catch (e) { /* 非 JSON 响应（如代理错误页） */ }
+    if (!res.ok) {
+      const msg = data.message || data.error;
+      if (!msg && res.status === 404) throw new Error('接口不存在：' + BASE + path + '（当前访问地址可能未代理到服务）');
+      if (!msg) throw new Error('请求失败（HTTP ' + res.status + '），响应不是有效 JSON');
+      throw new Error(msg);
+    }
+    if (!data || typeof data !== 'object') throw new Error('服务返回格式异常（HTTP ' + res.status + '）');
     return data;
   }
 
@@ -46,6 +59,16 @@ const API = (function() {
     adjustStock: (id, delta) => request(`/products/${id}/stock`, { method: 'POST', body: JSON.stringify({ delta }) }),
     createProduct: (data) => request('/products', { method: 'POST', body: JSON.stringify(data) }),
     updateProduct: (id, data) => request(`/products/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    // 上传商品图片（multipart，不能手动设 Content-Type，让浏览器带 boundary）
+    uploadFile: (formData) => fetch(BASE + '/upload', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + getToken() },
+      body: formData,
+    }).then(async res => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || data.error || '上传失败');
+      return data;
+    }),
     // Orders
     listOrders: (params = {}) => {
       const q = new URLSearchParams(params).toString();

@@ -10,6 +10,7 @@ const authRoutes = require('./routes/auth');
 const productRoutes = require('./routes/products');
 const orderRoutes = require('./routes/orders');
 const adminRoutes = require('./routes/admin');
+const uploadRoutes = require('./routes/upload');
 
 const app = express();
 app.use(cors());
@@ -26,14 +27,17 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api', uploadRoutes);
 app.use('/api', adminRoutes);
 
-// Static — PC admin at /admin, mobile at / (root)
+// Static — PC admin at /admin, mobile at / (root), uploads at /uploads
 const ADMIN_DIR = path.join(__dirname, '..', '..', 'public-admin');
 const MP_DIR    = path.join(__dirname, '..', '..', 'public-mp');
+const UPLOADS_DIR = path.join(__dirname, '..', 'uploads');
 
 app.use('/admin', express.static(ADMIN_DIR));
 app.use('/mp',    express.static(MP_DIR));
+app.use('/uploads', express.static(UPLOADS_DIR, { maxAge: '7d' }));
 app.use('/',      express.static(MP_DIR));  // mobile is the default root
 
 // Fallback for SPA routes (rare since we use hash)

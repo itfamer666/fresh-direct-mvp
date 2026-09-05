@@ -78,7 +78,8 @@
           <div class="grid">
             <div v-for="p in filteredProducts" :key="p.id" class="card" @click="goProduct(p.id)">
               <div class="img" :style="`background:${p.gradient};`">
-                <span>{{ p.image }}</span>
+                <img v-if="p.imageUrl" :src="p.imageUrl" :alt="p.name" />
+                <span v-else>{{ p.image }}</span>
                 <span v-if="p.tags[0]" class="badge">{{ p.tags[0] }}</span>
                 <span v-if="!p.active" class="soldout">已下架</span>
               </div>
@@ -99,7 +100,8 @@
         <div v-show="currentPage === 'product'" class="page">
           <div v-if="currentProduct" class="product-detail">
             <div class="hero" :style="`background:${currentProduct.gradient};`">
-              <span>{{ currentProduct.image }}</span>
+              <img v-if="currentProduct.imageUrl" :src="currentProduct.imageUrl" :alt="currentProduct.name" />
+              <span v-else>{{ currentProduct.image }}</span>
               <div class="indicator">1/3</div>
             </div>
             <div class="price-bar">
@@ -135,7 +137,10 @@
               <van-icon name="arrow" ></van-icon>
             </div>
             <div class="citem">
-              <div class="img" :style="`background:${currentProduct.gradient};`">{{ currentProduct.image }}</div>
+              <div class="img" :style="`background:${currentProduct.gradient};`">
+                <img v-if="currentProduct.imageUrl" :src="currentProduct.imageUrl" :alt="currentProduct.name" />
+                <span v-else>{{ currentProduct.image }}</span>
+              </div>
               <div class="info">
                 <div class="name">{{ currentProduct.name }}</div>
                 <div class="spec">{{ currentProduct.spec }}</div>

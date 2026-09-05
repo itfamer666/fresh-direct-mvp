@@ -178,7 +178,10 @@
                   <el-card shadow="hover" :class="['prod-card', { 'is-off': !p.active }]">
                     <el-tag :type="p.active ? 'success' : 'info'" size="small" effect="dark" style="position:absolute;top:10px;left:10px;">{{ p.active ? '在售' : '已下架' }}</el-tag>
                     <div class="prod-body">
-                      <div class="prod-img" :style="`background:${p.gradient};`">{{ p.image }}</div>
+                      <div class="prod-img" :style="`background:${p.gradient};`">
+                        <img v-if="p.imageUrl" :src="p.imageUrl" :alt="p.name" />
+                        <span v-else>{{ p.image }}</span>
+                      </div>
                       <div class="prod-info">
                         <div class="prod-name">{{ p.name }}</div>
                         <div class="prod-cat">{{ p.category }} · {{ p.spec }}</div>
@@ -566,6 +569,28 @@
             <el-form-item label="标签"><el-input v-model="productDialog.form.tags" placeholder="逗号分隔，如：当日现摘,顺丰冷链" /></el-form-item>
           </el-col>
         </el-row>
+        <el-form-item label="商品图片">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div v-if="productDialog.form.image_url" style="position:relative;">
+              <img :src="productDialog.form.image_url" style="width:100px;height:100px;object-fit:cover;border-radius:8px;border:1px solid #e4e7ed;" />
+              <el-button type="danger" size="small" circle :icon="'Close'" style="position:absolute;top:-8px;right:-8px;" @click="removeProductImage"></el-button>
+            </div>
+            <el-upload
+              v-else
+              :http-request="uploadProductImage"
+              :show-file-list="false"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              drag
+              style="width:160px;height:100px;"
+            >
+              <div style="text-align:center;color:#909399;">
+                <el-icon style="font-size:24px;"><UploadFilled /></el-icon>
+                <div style="font-size:12px;margin-top:4px;">点击或拖拽上传</div>
+                <div style="font-size:11px;color:#c0c4cc;">JPG/PNG/WEBP ≤2MB</div>
+              </div>
+            </el-upload>
+          </div>
+        </el-form-item>
         <el-form-item label="渐变色">
           <el-input v-model="productDialog.form.gradient" placeholder="CSS 渐变，如 linear-gradient(135deg, #ffb3b3, #ff7a8a)">
             <template #prepend>
