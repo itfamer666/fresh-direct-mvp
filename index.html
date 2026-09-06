@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>鲜直达 · 助农优鲜 MVP</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --green: #2bb673;
+      --orange: #ff4d2e;
+      --gold: #e6a23c;
+      --ink: #1f1a17;
+      --muted: #8a7d72;
+      --bg: #faf6f0;
+      --card: #ffffff;
+      --border: #f0d9c4;
+      --radius: 16px;
+      --shadow: 0 4px 24px rgba(31, 26, 23, .08);
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.6;
+    }
+    .hero {
+      background: linear-gradient(135deg, var(--green) 0%, #1a9b56 100%);
+      color: #fff;
+      padding: 60px 20px 80px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -40px; left: 50%;
+      transform: translateX(-50%);
+      width: 80%; height: 80px;
+      background: var(--bg);
+      border-radius: 50% 50% 0 0;
+    }
+    .hero h1 { font-size: 2.4rem; font-weight: 800; letter-spacing: 2px; }
+    .hero .sub { font-size: 1.1rem; opacity: .9; margin-top: 8px; }
+    .hero .tags { margin-top: 16px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .hero .tag {
+      background: rgba(255,255,255,.2);
+      border: 1px solid rgba(255,255,255,.3);
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: .85rem;
+    }
+    .container { max-width: 960px; margin: 0 auto; padding: 0 20px; }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin: -40px auto 40px;
+      position: relative;
+      z-index: 1;
+    }
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 32px 24px;
+      text-align: center;
+      transition: transform .2s, box-shadow .2s;
+    }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 8px 32px rgba(31,26,23,.12); }
+    .card .icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .card h3 { font-size: 1.3rem; margin-bottom: 8px; }
+    .card p { color: var(--muted); font-size: .9rem; margin-bottom: 16px; }
+    .card a {
+      display: inline-block;
+      padding: 10px 28px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: .9rem;
+      text-decoration: none;
+      transition: opacity .2s;
+    }
+    .card a:hover { opacity: .85; }
+    .card.admin a { background: var(--orange); color: #fff; }
+    .card.mp a { background: var(--green); color: #fff; }
+    .card.docs a { background: var(--gold); color: #fff; }
+    .features {
+      margin: 40px auto;
+      padding: 40px 0;
+    }
+    .features h2 { text-align: center; font-size: 1.6rem; margin-bottom: 32px; }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+    .feature {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+    .feature .emoji { font-size: 1.8rem; }
+    .feature h4 { font-size: 1rem; margin: 8px 0 4px; }
+    .feature p { font-size: .82rem; color: var(--muted); }
+    .tech-stack {
+      text-align: center;
+      padding: 40px 20px;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      margin: 40px 0;
+    }
+    .tech-stack h2 { font-size: 1.6rem; margin-bottom: 20px; }
+    .tech-badges { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .tech-badge {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: .85rem;
+      color: var(--ink);
+    }
+    footer {
+      text-align: center;
+      padding: 32px 20px;
+      color: var(--muted);
+      font-size: .85rem;
+    }
+    .demo-notice {
+      background: #fff3cd;
+      border: 1px solid #ffe08a;
+      color: #856404;
+      padding: 12px 20px;
+      border-radius: 8px;
+      text-align: center;
+      font-size: .88rem;
+      margin: 0 20px 20px;
+      max-width: 920px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    @media (max-width: 600px) {
+      .hero h1 { font-size: 1.8rem; }
+      .hero .sub { font-size: .95rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="hero">
+    <h1>🥬 鲜直达 · 助农优鲜</h1>
+    <p class="sub">时效农产品分销小程序 + PC 管理后台</p>
+    <div class="tags">
+      <span class="tag">Vue 3</span>
+      <span class="tag">Node.js</span>
+      <span class="tag">SQLite</span>
+      <span class="tag">二级分销</span>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="demo-notice">
+      ⚠️ 本页面为静态预览，小程序与管理后台需配合后端服务运行。下方入口仅展示前端界面。
+    </div>
+
+    <div class="cards">
+      <div class="card mp">
+        <div class="icon">📱</div>
+        <h3>移动端小程序</h3>
+        <p>商品浏览 · 下单支付 · 分销推广 · 佣金提现</p>
+        <a href="public-mp/index.html" target="_blank">查看小程序 →</a>
+      </div>
+      <div class="card admin">
+        <div class="icon">🖥️</div>
+        <h3>管理后台</h3>
+        <p>商品管理 · 订单处理 · 合伙人审核 · 数据看板</p>
+        <a href="public-admin/index.html" target="_blank">查看后台 →</a>
+      </div>
+      <div class="card docs">
+        <div class="icon">📋</div>
+        <h3>项目文档</h3>
+        <p>PRD · 技术方案 · API 接口 · 部署指南</p>
+        <a href="README.md" target="_blank">查看文档 →</a>
+      </div>
+    </div>
+
+    <div class="features">
+      <h2>核心功能</h2>
+      <div class="feature-grid">
+        <div class="feature">
+          <div class="emoji">🛒</div>
+          <h4>商品管理</h4>
+          <p>多品类 · 图片上传 · 上下架 · 佣金比例设置</p>
+        </div>
+        <div class="feature">
+          <div class="emoji">📦</div>
+          <h4>订单流程</h4>
+          <p>下单 → 支付 → 发货 → 确认 → 佣金结算</p>
+        </div>
+        <div class="feature">
+          <div class="emoji">🤝</div>
+          <h4>二级分销</h4>
+          <p>直推佣金 + 间推佣金 · 合伙人层级管理</p>
+        </div>
+        <div class="feature">
+          <div class="emoji">💰</div>
+          <h4>佣金系统</h4>
+          <p>自动计算 · 订单确认即结算 · 提现申请</p>
+        </div>
+        <div class="feature">
+          <div class="emoji">📊</div>
+          <h4>数据看板</h4>
+          <p>GMV · 订单趋势 · 商品排行 · 分销占比</p>
+        </div>
+        <div class="feature">
+          <div class="emoji">🔐</div>
+          <h4>用户体系</h4>
+          <p>注册登录 · 角色权限 · 合伙人审核</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tech-stack">
+      <h2>技术栈</h2>
+      <div class="tech-badges">
+        <span class="tech-badge">Node.js + Express</span>
+        <span class="tech-badge">SQLite (better-sqlite3)</span>
+        <span class="tech-badge">Vue 3 (CDN)</span>
+        <span class="tech-badge">Vant 4 UI</span>
+        <span class="tech-badge">Element Plus</span>
+        <span class="tech-badge">ECharts</span>
+        <span class="tech-badge">Multer 文件上传</span>
+        <span class="tech-badge">JWT 鉴权</span>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>鲜直达 · 助农优鲜 MVP &copy; 2026 · Powered by Trae</p>
+  </footer>
+
+</body>
+</html>
